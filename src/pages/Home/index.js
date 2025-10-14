@@ -1,4 +1,4 @@
-const Publish = () => {
-  return <div>Publish</div>
+const Home = () => {
+  return <div>Home</div>
 }
-export default Publish
+export default Home
