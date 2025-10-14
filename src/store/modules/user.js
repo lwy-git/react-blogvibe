@@ -1,36 +1,52 @@
-import { createSlice } from '@reduxjs/toolkit'
-import { request } from '@/utils'
-import { getToken, setToken } from '@/utils'
+import { createSlice } from "@reduxjs/toolkit";
+import { request } from "@/utils";
+import { getToken, setToken, clearToken } from "@/utils";
 const userStore = createSlice({
-  name: 'user',
+  name: "user",
   // 数据状态
   initialState: {
-    token:getToken()||'',
+    token: getToken() || "",
+    userInfo: {},
   },
   // 同步修改方法
   reducers: {
-    setUserInfo (state, action) {
-      state.token = action.payload
+    setUserToken(state, action) {
+      state.token = action.payload;
       // 存入本地
-      setToken(state.token)
-    }
-  }
-})
+      setToken(state.token);
+    },
+    setUserInfo(state, action) {
+      state.userInfo = action.payload;
+    },
+    logOut(state, action) {
+      state.token = "";
+      state.userInfo = {};
+      clearToken();
+    },
+  },
+});
 
 // 解构出actionCreater
-const { setUserInfo } = userStore.actions
+const { setUserInfo, setUserToken, logOut } = userStore.actions;
 
 // 获取reducer函数
-const userReducer = userStore.reducer
+const userReducer = userStore.reducer;
 
 // 异步方法封装
 const fetchLogin = (loginForm) => {
   return async (dispatch) => {
-    const res = await request.post('/authorizations', loginForm)
-    dispatch(setUserInfo(res.data.token))
-  }
-}
+    const res = await request.post("/authorizations", loginForm);
+    dispatch(setUserToken(res.data.token));
+  };
+};
 
-export { fetchLogin }
+const fetchUserInfo = () => {
+  return async (dispatch) => {
+    const res = await request.get("/user/profile");
+    dispatch(setUserInfo(res.data));
+  };
+};
 
-export default userReducer
+export { fetchLogin, fetchUserInfo, logOut };
+
+export default userReducer;
