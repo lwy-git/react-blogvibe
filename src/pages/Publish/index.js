@@ -1,8 +1,19 @@
-import { Card,Radio, Upload, Breadcrumb, Form, Button, message,Input, Space, Select } from "antd";
+import {
+  Card,
+  Radio,
+  Upload,
+  Breadcrumb,
+  Form,
+  Button,
+  message,
+  Input,
+  Space,
+  Select,
+} from "antd";
 import { Link } from "react-router-dom";
 import "./index.scss";
 import TinyMCEEditor from "@/components/TinyMCEEditor";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { request } from "@/utils";
 import { PlusOutlined } from "@ant-design/icons";
 const { Option } = Select;
@@ -17,28 +28,51 @@ const Publish = () => {
     fetchChannels();
   }, []);
   // 发布文章
-const onFinish = async (formValue) => {
-  const { channel_id, content, title } = formValue
-  const params = {
-    channel_id,
-    content,
-    title,
-    type: 1,
-    cover: {
-      type: 1,
-      images: []
+  const onFinish = async (formValue) => {
+    if (imageType !== imageList.length)
+      return message.warning("图片类型和数量不一致");
+    const { channel_id, content, title } = formValue;
+    const params = {
+      channel_id,
+      content,
+      title,
+      type: imageType,
+      cover: {
+        cover: {
+          type: imageType,
+          images: imageList.map((item) => item.response.data.url),
+        },
+      },
+    };
+    params.content = "xxx";
+    try {
+      await request.post("/mp/articles?draft=false", params);
+      message.success("发布文章成功"); // 使用简单的字符串形式
+      console.log("发布成功"); // 添加日志以便调试
+    } catch (error) {
+      console.error("发布失败:", error); // 捕获并打印错误
+      message.error("发布失败，请重试"); // 显示错误提示
     }
-  }
-  params.content='xxx'
-   try {
-    await request.post('/mp/articles?draft=false', params)
-    message.success('发布文章成功')  // 使用简单的字符串形式
-    console.log('发布成功')  // 添加日志以便调试
-  } catch (error) {
-    console.error('发布失败:', error)  // 捕获并打印错误
-    message.error('发布失败，请重试')  // 显示错误提示
-  }
-}
+  };
+  const cacheImageList = useRef([]);
+  const [imageList, setImageList] = useState([]);
+  const onUploadChange = (val) => {
+    setImageList(val.fileList);
+    cacheImageList.current = val.fileList;
+  };
+  const [imageType, setImageType] = useState(0);
+  const onTypeChange = (e) => {
+    const type = e.targert.value;
+    setImageType(type);
+    if (imageType === 1) {
+      const oneImageList = cacheImageList.current[0]
+        ? cacheImageList.current[0]
+        : [];
+      setImageList(oneImageList);
+    } else if (imageType === 3) {
+      setImageList(cacheImageList.current);
+    }
+  };
   return (
     <div className="publish">
       <Card
@@ -94,22 +128,30 @@ const onFinish = async (formValue) => {
             </Space>
           </Form.Item>
           <Form.Item label="封面">
-  <Form.Item name="type">
-    <Radio.Group>
-      <Radio value={1}>单图</Radio>
-      <Radio value={3}>三图</Radio>
-      <Radio value={0}>无图</Radio>
-    </Radio.Group>
-  </Form.Item>
-  <Upload
-    listType="picture-card"
-    showUploadList
-  >
-    <div style={{ marginTop: 8 }}>
-      <PlusOutlined />
-    </div>
-  </Upload>
-</Form.Item>
+            <Form.Item name="type">
+              <Radio.Group onChange={onTypeChange}>
+                <Radio value={1}>单图</Radio>
+                <Radio value={3}>三图</Radio>
+                <Radio value={0}>无图</Radio>
+              </Radio.Group>
+            </Form.Item>
+            {imageType > 0 && (
+              <Upload
+                name="image"
+                listType="picture-card"
+                showUploadList
+                action={"http://geek.itheima.net/v1_0/upload"}
+                onChange={onUploadChange}
+                maxCount={imageType}
+                multiple={imageType > 1}
+                fileList={imageList}
+              >
+                <div style={{ marginTop: 8 }}>
+                  <PlusOutlined />
+                </div>
+              </Upload>
+            )}
+          </Form.Item>
         </Form>
       </Card>
     </div>
