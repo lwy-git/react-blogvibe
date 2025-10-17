@@ -17,9 +17,11 @@ import { useState, useEffect, useRef } from "react";
 import { request } from "@/utils";
 import { PlusOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 const { Option } = Select;
 
 const Publish = () => {
+  const navagite = useNavigate();
   const [searchParams] = useSearchParams();
   const articleId = searchParams.get("id");
   const [form] = Form.useForm();
@@ -80,6 +82,7 @@ const Publish = () => {
       await request.post("/mp/articles?draft=false", data);
     }
     message.success(`${articleId ? "编辑" : "发布"}文章成功`);
+    navagite("/article");
   };
   const cacheImageList = useRef([]);
   const [imageList, setImageList] = useState([]);

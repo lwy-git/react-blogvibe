@@ -1,25 +1,37 @@
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Login";
+import { lazy, Suspense } from 'react'
 import {  createBrowserRouter } from "react-router-dom";
-import Home from '@/pages/Home';
-import Article from '@/pages/Article';
-import Publish from '@/pages/Publish';
 import AuthRoute from '@/components/AuthRoute'
+const Publish = lazy(() => import('@/pages/Publish'))
+const Article = lazy(() => import('@/pages/Article'))
+const Home = lazy(() => import('@/pages/Home'))
 const router=createBrowserRouter([{
-    path: "/",
+  path: "/",
     element: <AuthRoute><Layout /></AuthRoute>,
     children: [
       {
         index: true,
-        element: <Home />,
+        element: 
+        <Suspense fallback={<div>Loading...</div>}>
+          <Home />
+        </Suspense>,
       },
       {
         path: 'article',
-        element: <Article />,
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <Article />
+          </Suspense>
+        ),
       },
       {
         path: 'publish',
-        element: <Publish />,
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <Publish />
+          </Suspense>
+        ),
       },
     ],
   },
