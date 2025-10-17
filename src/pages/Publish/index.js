@@ -16,9 +16,28 @@ import TinyMCEEditor from "@/components/TinyMCEEditor";
 import { useState, useEffect, useRef } from "react";
 import { request } from "@/utils";
 import { PlusOutlined } from "@ant-design/icons";
+import { useSearchParams } from "react-router-dom";
 const { Option } = Select;
 
 const Publish = () => {
+  const [searchParams] = useSearchParams();
+  const articleId = searchParams.get("id");
+  const [form] = Form.useForm();
+  useEffect(() => {
+    async function getArticle() {
+      const res = await request.get(`/mp/articles/${articleId}`);
+      const { cover, ...formValue } = res.data;
+      // 设置表单数据
+      form.setFieldsValue({ ...formValue, type: cover.type });
+      // 2. 回填封面图片
+      setImageType(cover.type); // 封面类型
+      setImageList(cover.images.map((url) => ({ url }))); // 封面list
+    }
+    if (articleId) {
+      // 拉取数据回显
+      getArticle();
+    }
+  }, [articleId, form]);
   const [channels, setChannels] = useState([]);
   useEffect(() => {
     async function fetchChannels() {
@@ -28,31 +47,39 @@ const Publish = () => {
     fetchChannels();
   }, []);
   // 发布文章
+  // 发布文章
   const onFinish = async (formValue) => {
-    if (imageType !== imageList.length)
-      return message.warning("图片类型和数量不一致");
     const { channel_id, content, title } = formValue;
-    const params = {
+    const formatUrl = (list) => {
+      return list.map((item) => {
+        if (item.response) {
+          return item.response.data.url;
+        } else {
+          return item.url;
+        }
+      });
+    };
+    const data = {
       channel_id,
       content,
       title,
       type: imageType,
       cover: {
-        cover: {
-          type: imageType,
-          images: imageList.map((item) => item.response.data.url),
-        },
+        type: imageType,
+        images: formatUrl(imageList),
       },
     };
-    params.content = "xxx";
-    try {
-      await request.post("/mp/articles?draft=false", params);
-      message.success("发布文章成功"); // 使用简单的字符串形式
-      console.log("发布成功"); // 添加日志以便调试
-    } catch (error) {
-      console.error("发布失败:", error); // 捕获并打印错误
-      message.error("发布失败，请重试"); // 显示错误提示
+    data.content = "xxx";
+    if (imageType !== imageList.length)
+      return message.warning("图片类型和数量不一致");
+    if (articleId) {
+      // 编辑
+      await request.put(`/mp/articles/${articleId}?draft=false`, data);
+    } else {
+      // 新增
+      await request.post("/mp/articles?draft=false", data);
     }
+    message.success(`${articleId ? "编辑" : "发布"}文章成功`);
   };
   const cacheImageList = useRef([]);
   const [imageList, setImageList] = useState([]);
@@ -62,7 +89,8 @@ const Publish = () => {
   };
   const [imageType, setImageType] = useState(0);
   const onTypeChange = (e) => {
-    const type = e.targert.value;
+    console.log("e", e);
+    const type = e.target.value;
     setImageType(type);
     if (imageType === 1) {
       const oneImageList = cacheImageList.current[0]
@@ -80,7 +108,7 @@ const Publish = () => {
           <Breadcrumb
             items={[
               { title: <Link to={"/"}>首页</Link> },
-              { title: "发布文章" },
+              { title: `${articleId ? "编辑文章" : "发布文章"}` },
             ]}
           />
         }
@@ -90,6 +118,7 @@ const Publish = () => {
           wrapperCol={{ span: 16 }}
           initialValues={{ type: 1 }}
           onFinish={onFinish}
+          form={form}
         >
           <Form.Item
             label="标题"

@@ -24,7 +24,14 @@ const { RangePicker } = DatePicker;
 const Article = () => {
   const navagite = useNavigate();
   // 删除文章
-  const delArticle = async (data) => {};
+  const delArticle = async (data) => {
+    await request.delete(`/mp/articles/${data.id}`)
+    // 更新列表
+    setParams({
+      page: 1,
+      per_page: 10
+    })
+}
   // 准备列数据
   const columns = [
     {
