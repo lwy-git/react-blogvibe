@@ -24,7 +24,7 @@ module.exports = {
         // key: 不参与打包的包(由dependencies依赖项中的key决定)
         // value: cdn文件中 挂载于全局的变量名称
         webpackConfig.externals = {
-          react: 'React',
+          'react': 'React',
           'react-dom': 'ReactDOM'
         }
         // 配置现成的cdn资源地址
